@@ -1,0 +1,17 @@
+displayName: Forward Cookie Plugin
+type: middleware
+
+import: github.com/nese/forward-cookie
+
+summary: "This plugin is used to reach a certain endpoint and to be able to propogate
+    cookies that are provided from that endpoint back to the client. It may be a browser
+    or a simple postman request."
+
+testData:
+  addr: "my.addr.com"
+  cookies:
+    - "response-cookie"
+  headers:
+    - "request-header"
+  parameters:
+    - "query-param"
