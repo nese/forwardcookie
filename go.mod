@@ -1,3 +1,3 @@
-module github.com/nese/forward-cookie
+module github.com/nese/forwardcookie
 
 go 1.17

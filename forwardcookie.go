@@ -21,7 +21,9 @@ type Config struct {
 // CreateConfig creates the default plugin configuration.
 func CreateConfig() *Config {
 	return &Config{
-		Cookies: make([]string, 0),
+		Cookies:    make([]string, 0),
+		Headers:    make([]string, 0),
+		Parameters: make([]string, 0),
 	}
 }
 
@@ -107,6 +109,7 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	e.next.ServeHTTP(rw, req)
 }
 
+// Extract cookie name.
 func getCookieName(setCookieString string) string {
 	parts := strings.Split(textproto.TrimString(setCookieString), ";")
 	if len(parts) == 1 && parts[0] == "" {

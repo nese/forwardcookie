@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	forwardcookie "github.com/nese/forward-cookie"
+	forwardcookie "github.com/nese/forwardcookie"
 )
 
 func TestForwardCookie(t *testing.T) {
