@@ -110,7 +110,7 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	e.next.ServeHTTP(rw, req)
 }
 
-// Extract cookie name
+// Extract cookie name.
 func getCookieName(setCookieString string) string {
 	parts := strings.Split(textproto.TrimString(setCookieString), ";")
 	if len(parts) == 1 && parts[0] == "" {
