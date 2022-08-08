@@ -1,4 +1,4 @@
-package forwardcookie_test
+package forward_cookie_test
 
 import (
 	"context"

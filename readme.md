@@ -7,7 +7,7 @@ that is provided from the endpoint.
 
 ## Configuration
 In order to get this up and running you are required to configure the following fields:
-```
+```yaml
 testData:
   addr: "my.addr.com"
   cookies:
