@@ -1,5 +1,5 @@
 // Package forwardcookie this is the package.
-package forward_cookie
+package forwardcookie
 
 import (
 	"context"

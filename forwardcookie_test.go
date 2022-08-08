@@ -1,4 +1,4 @@
-package forward_cookie_test
+package forwardcookie_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	forwardcookie "github.com/nese/forward-cookie"
+	forwardcookie "github.com/nese/forwardcookie"
 )
 
 func TestForwardCookie(t *testing.T) {
