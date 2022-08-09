@@ -1,7 +1,7 @@
-displayName: Forward Cookie Plugin
+displayName: Forward Cookie
 type: middleware
 
-import: github.com/nese/forward-cookie
+import: github.com/nese/forwardcookie
 
 summary: "This plugin is used to reach a certain endpoint and to be able to propogate
     cookies that are provided from that endpoint back to the client. It may be a browser
