@@ -54,54 +54,39 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	isFetchReq := true
-	// if the incoming request contains cookies
-	if len(req.Cookies()) > 0 {
-		// make sure that those cookies won't be added two-fold
-		for _, name := range e.cookies {
-			cookie, err := req.Cookie(name)
-			if err != nil {
-				isFetchReq = false
-			}
-			if cookie != nil {
-				isFetchReq = false
+	fetchReq, err := http.NewRequest(http.MethodGet, e.addr, nil)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	addCookies(fetchReq, req, e)
+	addHeaders(fetchReq, req, e)
+	addParameters(fetchReq, req, e)
+
+	forwardResponse, err := http.DefaultClient.Do(fetchReq)
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	cookies := Cookies{
+		cookieHeaders: make(map[string]string),
+	}
+
+	responseCookies := forwardResponse.Header["Set-Cookie"]
+
+	for _, wantedCookie := range e.cookies {
+		for _, header := range responseCookies {
+			cookieName := getCookieName(header)
+			if cookieName == wantedCookie {
+				cookies.cookieHeaders[cookieName] = header
 			}
 		}
 	}
-	if isFetchReq {
-		fetchReq, err := http.NewRequest(http.MethodGet, e.addr, nil)
-		if err != nil {
-			log.Printf("%s", err)
-			return
-		}
 
-		addHeaders(fetchReq, req, e)
-		addParameters(fetchReq, req, e)
-
-		forwardResponse, err := http.DefaultClient.Do(fetchReq)
-		if err != nil {
-			log.Printf("%s", err)
-			return
-		}
-
-		cookies := Cookies{
-			cookieHeaders: make(map[string]string),
-		}
-
-		responseCookies := forwardResponse.Header["Set-Cookie"]
-
-		for _, wantedCookie := range e.cookies {
-			for _, header := range responseCookies {
-				cookieName := getCookieName(header)
-				if cookieName == wantedCookie {
-					cookies.cookieHeaders[cookieName] = header
-				}
-			}
-		}
-
-		for _, cookieHeader := range cookies.cookieHeaders {
-			rw.Header().Add("Set-Cookie", cookieHeader)
-		}
+	for _, cookieHeader := range cookies.cookieHeaders {
+		rw.Header().Add("Set-Cookie", cookieHeader)
 	}
 
 	e.next.ServeHTTP(rw, req)
@@ -120,6 +105,17 @@ func getCookieName(setCookieString string) string {
 	}
 	cookieName := cookiePair[:j]
 	return cookieName
+}
+
+// addCookies to fetchReq.
+func addCookies(fetchReq, req *http.Request, config *ForwardCookie) {
+	for _, wantedCookie := range config.cookies {
+		cookie, err := req.Cookie(wantedCookie)
+		if err != nil {
+			continue
+		}
+		fetchReq.AddCookie(cookie)
+	}
 }
 
 // addHeaders to fetchReq.
