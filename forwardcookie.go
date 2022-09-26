@@ -5,8 +5,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"net/textproto"
-	"strings"
 )
 
 // Config the plugin configuration.
@@ -24,11 +22,6 @@ func CreateConfig() *Config {
 		Headers:    make([]string, 0),
 		Parameters: make([]string, 0),
 	}
-}
-
-// Cookies holder.
-type Cookies struct {
-	cookieHeaders map[string]string
 }
 
 // ForwardCookie a ForwardCookie plugin.
@@ -60,7 +53,7 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	addCookies(fetchReq, req, e)
+	addCookiesFromRequest(fetchReq, req, e)
 	addHeaders(fetchReq, req, e)
 	addParameters(fetchReq, req, e)
 
@@ -70,45 +63,24 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	cookies := Cookies{
-		cookieHeaders: make(map[string]string),
-	}
-
-	responseCookies := forwardResponse.Header["Set-Cookie"]
-
-	for _, wantedCookie := range e.cookies {
-		for _, header := range responseCookies {
-			cookieName := getCookieName(header)
-			if cookieName == wantedCookie {
-				cookies.cookieHeaders[cookieName] = header
-			}
-		}
-	}
-
-	for _, cookieHeader := range cookies.cookieHeaders {
-		rw.Header().Add("Set-Cookie", cookieHeader)
-	}
+	addCookiesFromResponse(rw, forwardResponse, e)
 
 	e.next.ServeHTTP(rw, req)
 }
 
-// Extract cookie name.
-func getCookieName(setCookieString string) string {
-	parts := strings.Split(textproto.TrimString(setCookieString), ";")
-	if len(parts) == 1 && parts[0] == "" {
-		return ""
+// addCookies to rw from resp.
+func addCookiesFromResponse(rw http.ResponseWriter, resp *http.Response, config *ForwardCookie) {
+	for _, wantedCookie := range config.cookies {
+		for _, respCookie := range resp.Cookies() {
+			if respCookie.Name == wantedCookie {
+				rw.Header().Add("Set-Cookie", respCookie.Raw)
+			}
+		}
 	}
-	cookiePair := textproto.TrimString(parts[0])
-	j := strings.Index(cookiePair, "=")
-	if j < 0 {
-		return ""
-	}
-	cookieName := cookiePair[:j]
-	return cookieName
 }
 
-// addCookies to fetchReq.
-func addCookies(fetchReq, req *http.Request, config *ForwardCookie) {
+// addCookies to fetchReq from req.
+func addCookiesFromRequest(fetchReq, req *http.Request, config *ForwardCookie) {
 	for _, wantedCookie := range config.cookies {
 		cookie, err := req.Cookie(wantedCookie)
 		if err != nil {
