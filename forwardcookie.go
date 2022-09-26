@@ -76,8 +76,8 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		AddHeaders(fetchReq, req, e)
-		AddParameters(fetchReq, req, e)
+		addHeaders(fetchReq, req, e)
+		addParameters(fetchReq, req, e)
 
 		client := http.Client{}
 		forwardResponse, err := client.Do(fetchReq)
@@ -124,8 +124,8 @@ func getCookieName(setCookieString string) string {
 	return cookieName
 }
 
-// AddHeaders to fetchReq.
-func AddHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
+// addHeaders to fetchReq.
+func addHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
 	for _, wantedHeader := range config.headers {
 		value := req.Header.Get(wantedHeader)
 		if value != "" {
@@ -134,8 +134,8 @@ func AddHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
 	}
 }
 
-// AddParameters to fetchReq.
-func AddParameters(fetchReq, req *http.Request, config *ForwardCookie) {
+// addParameters to fetchReq.
+func addParameters(fetchReq, req *http.Request, config *ForwardCookie) {
 	for _, wantedParam := range config.parameters {
 		value := req.URL.Query().Get(wantedParam)
 		if value != "" {
