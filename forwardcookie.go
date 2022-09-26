@@ -79,8 +79,7 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		addHeaders(fetchReq, req, e)
 		addParameters(fetchReq, req, e)
 
-		client := http.Client{}
-		forwardResponse, err := client.Do(fetchReq)
+		forwardResponse, err := http.DefaultClient.Do(fetchReq)
 		if err != nil {
 			log.Fatalf(fmt.Sprintf("%s", err))
 			return
