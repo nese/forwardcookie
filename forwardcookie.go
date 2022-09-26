@@ -3,7 +3,6 @@ package forwardcookie
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/textproto"
@@ -72,7 +71,7 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if isFetchReq {
 		fetchReq, err := http.NewRequest(http.MethodGet, e.addr, nil)
 		if err != nil {
-			log.Fatalf(fmt.Sprintf("%s", err))
+			log.Printf("%s", err)
 			return
 		}
 
@@ -81,7 +80,7 @@ func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 		forwardResponse, err := http.DefaultClient.Do(fetchReq)
 		if err != nil {
-			log.Fatalf(fmt.Sprintf("%s", err))
+			log.Printf("%s", err)
 			return
 		}
 
