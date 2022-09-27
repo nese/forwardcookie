@@ -80,7 +80,7 @@ func addCookiesFromResponse(rw http.ResponseWriter, resp *http.Response, config 
 }
 
 // addCookies to fetchReq from req.
-func addCookiesFromRequest(fetchReq, req *http.Request, config *ForwardCookie) {
+func addCookiesFromRequest(fetchReq *http.Request, req *http.Request, config *ForwardCookie) {
 	for _, wantedCookie := range config.cookies {
 		cookie, err := req.Cookie(wantedCookie)
 		if err != nil {
@@ -91,7 +91,7 @@ func addCookiesFromRequest(fetchReq, req *http.Request, config *ForwardCookie) {
 }
 
 // addHeaders to fetchReq.
-func addHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
+func addHeaders(fetchReq *http.Request, req *http.Request, config *ForwardCookie) {
 	for _, wantedHeader := range config.headers {
 		value := req.Header.Get(wantedHeader)
 		if value != "" {
@@ -101,7 +101,7 @@ func addHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
 }
 
 // addParameters to fetchReq.
-func addParameters(fetchReq, req *http.Request, config *ForwardCookie) {
+func addParameters(fetchReq *http.Request, req *http.Request, config *ForwardCookie) {
 	for _, wantedParam := range config.parameters {
 		value := req.URL.Query().Get(wantedParam)
 		if value != "" {
