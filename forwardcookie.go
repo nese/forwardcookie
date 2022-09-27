@@ -3,11 +3,8 @@ package forwardcookie
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
-	"net/textproto"
-	"strings"
 )
 
 // Config the plugin configuration.
@@ -25,11 +22,6 @@ func CreateConfig() *Config {
 		Headers:    make([]string, 0),
 		Parameters: make([]string, 0),
 	}
-}
-
-// Cookies holder.
-type Cookies struct {
-	cookieHeaders map[string]string
 }
 
 // ForwardCookie a ForwardCookie plugin.
@@ -55,77 +47,51 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (e *ForwardCookie) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	isFetchReq := true
-	// if the incoming request contains cookies
-	if len(req.Cookies()) > 0 {
-		// make sure that those cookies won't be added two-fold
-		for _, name := range e.cookies {
-			cookie, err := req.Cookie(name)
-			if err != nil {
-				isFetchReq = false
-			}
-			if cookie != nil {
-				isFetchReq = false
-			}
-		}
+	fetchReq, err := http.NewRequest(http.MethodGet, e.addr, nil)
+	if err != nil {
+		log.Printf("%s", err)
+		return
 	}
-	if isFetchReq {
-		fetchReq, err := http.NewRequest(http.MethodGet, e.addr, nil)
-		if err != nil {
-			log.Fatalf(fmt.Sprintf("%s", err))
-			return
-		}
 
-		AddHeaders(fetchReq, req, e)
-		AddParameters(fetchReq, req, e)
+	addCookiesFromRequest(fetchReq, req, e)
+	addHeaders(fetchReq, req, e)
+	addParameters(fetchReq, req, e)
 
-		client := http.Client{}
-		forwardResponse, err := client.Do(fetchReq)
-		if err != nil {
-			log.Fatalf(fmt.Sprintf("%s", err))
-			return
-		}
-
-		cookies := Cookies{
-			cookieHeaders: make(map[string]string),
-		}
-
-		responseCookies := forwardResponse.Header["Set-Cookie"]
-
-		for _, wantedCookie := range e.cookies {
-			for _, header := range responseCookies {
-				cookieName := getCookieName(header)
-				if cookieName == wantedCookie {
-					cookies.cookieHeaders[cookieName] = header
-				}
-			}
-		}
-
-		for _, cookieHeader := range cookies.cookieHeaders {
-			rw.Header().Add("Set-Cookie", cookieHeader)
-		}
+	forwardResponse, err := http.DefaultClient.Do(fetchReq)
+	if err != nil {
+		log.Printf("%s", err)
+		return
 	}
+
+	addCookiesFromResponse(rw, forwardResponse, e)
 
 	e.next.ServeHTTP(rw, req)
 }
 
-// Extract cookie name.
-func getCookieName(setCookieString string) string {
-	parts := strings.Split(textproto.TrimString(setCookieString), ";")
-	if len(parts) == 1 && parts[0] == "" {
-		return ""
+// addCookies to rw from resp.
+func addCookiesFromResponse(rw http.ResponseWriter, resp *http.Response, config *ForwardCookie) {
+	for _, wantedCookie := range config.cookies {
+		for _, respCookie := range resp.Cookies() {
+			if respCookie.Name == wantedCookie {
+				rw.Header().Add("Set-Cookie", respCookie.Raw)
+			}
+		}
 	}
-	cookiePair := textproto.TrimString(parts[0])
-	j := strings.Index(cookiePair, "=")
-	if j < 0 {
-		return ""
-	}
-	cookieName := cookiePair[:j]
-	return cookieName
 }
 
-// AddHeaders to fetchReq.
-func AddHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
+// addCookies to fetchReq from req.
+func addCookiesFromRequest(fetchReq *http.Request, req *http.Request, config *ForwardCookie) {
+	for _, wantedCookie := range config.cookies {
+		cookie, err := req.Cookie(wantedCookie)
+		if err != nil {
+			continue
+		}
+		fetchReq.AddCookie(cookie)
+	}
+}
+
+// addHeaders to fetchReq.
+func addHeaders(fetchReq *http.Request, req *http.Request, config *ForwardCookie) {
 	for _, wantedHeader := range config.headers {
 		value := req.Header.Get(wantedHeader)
 		if value != "" {
@@ -134,8 +100,8 @@ func AddHeaders(fetchReq, req *http.Request, config *ForwardCookie) {
 	}
 }
 
-// AddParameters to fetchReq.
-func AddParameters(fetchReq, req *http.Request, config *ForwardCookie) {
+// addParameters to fetchReq.
+func addParameters(fetchReq *http.Request, req *http.Request, config *ForwardCookie) {
 	for _, wantedParam := range config.parameters {
 		value := req.URL.Query().Get(wantedParam)
 		if value != "" {
